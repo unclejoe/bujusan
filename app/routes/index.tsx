@@ -17,6 +17,9 @@ export default function Index() {
                 <li>
                   <Link to="nfts">Browse NFTs</Link>
                 </li>
+                <li>
+                  <Link to="login">Login</Link>
+                </li>
               </ul>
             </nav>
           </div>

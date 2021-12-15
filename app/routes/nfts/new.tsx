@@ -1,10 +1,21 @@
-import type { ActionFunction } from "remix";
+import { ActionFunction, Link, LoaderFunction, useCatch } from "remix";
 import { useActionData, redirect, json } from "remix";
 import { db } from "~/utils/db.server";
+import { getUserId, requireUserId } from "~/utils/session.server";
+
+export const loader: LoaderFunction = async ({
+  request
+}) => {
+  const userId = await getUserId(request);
+  if (!userId) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+  return {};
+};
 
 function validateNftContent(content: string) {
   if (content.length < 10) {
-    return `That nft is too short`;
+    return `That nft'content is too short`;
   }
 }
 
@@ -32,6 +43,7 @@ const badRequest = (data: ActionData) =>
 export const action: ActionFunction = async ({
   request
 }) => {
+  const userId = await requireUserId(request);
   const form = await request.formData();
   const name = form.get("name");
   const content = form.get("content");
@@ -53,7 +65,7 @@ export const action: ActionFunction = async ({
     return badRequest({ fieldErrors, fields });
   }
 
-  const nft = await db.nft.create({ data: fields });
+  const nft = await db.nft.create({ data: {...fields,nfterId:userId} });
   return redirect(`/nfts/${nft.id}`);
 };
 
@@ -127,4 +139,25 @@ export default function NewNftRoute() {
       </form>
     </div>
   );
+}
+
+export function ErrorBoundary() {
+  return (
+    <div className="error-container">
+      Something unexpected went wrong. Sorry about that.
+    </div>
+  );
+}
+
+export function CatchBoundary() {
+  const caught = useCatch();
+
+  if (caught.status === 401) {
+    return (
+      <div className="error-container">
+        <p>You must be logged in to create a nft.</p>
+        <Link to="/login">Login</Link>
+      </div>
+    );
+  }
 }

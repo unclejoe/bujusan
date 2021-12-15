@@ -1,4 +1,6 @@
 import { Link, LinksFunction, LoaderFunction, Outlet, useLoaderData } from "remix";
+import { User } from "@prisma/client";
+import { getUser } from "~/utils/session.server";
 import { db } from "../utils/db.server";
 import stylesUrl from "../styles/ntfs.css"
 
@@ -12,18 +14,20 @@ export const links: LinksFunction = () => {
   };
 
 type LoaderData = {
-    nftListItem : Array<{ id : string, name : string}>;
+  user: User | null;
+  nftListItem : Array<{ id : string, name : string}>;
 };
 
-export const loader : LoaderFunction = async () => {
+export const loader : LoaderFunction = async ({request}) => {
     const data : LoaderData = {
         nftListItem : await db.nft.findMany({
             take: 5,
             select: { id: true, name: true},
             orderBy: { createdAt: "desc"}
-        })
+        }),
+        user : await getUser(request)
     };
-    return data;    
+    return data;
 }
 
 export default function Nfts() {
@@ -39,9 +43,21 @@ export default function Nfts() {
               aria-label="NFTs"
             >
               <span className="logo">🤪</span>
-              <span className="logo-medium">Bujusan N🤪FTs</span>
+              <span className="logo-medium">Bujusan NFTs 💎</span>
             </Link>
           </h1>
+          {data.user ? (
+            <div className="user-info">
+              <span>{`Hi ${data.user.username}`}</span>
+              <form action="/logout" method="post">
+                <button type="submit" className="button">
+                  Logout
+                </button>
+              </form>
+            </div>
+          ) : (
+            <Link to="/login" className="button">Login</Link>
+          )}
         </div>
       </header>
       <main className="jokes-main">

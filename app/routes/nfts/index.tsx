@@ -1,4 +1,4 @@
-import { useLoaderData,Link } from "remix";
+import { useLoaderData,Link, useCatch } from "remix";
 import type { LoaderFunction } from "remix";
 import type { Nft } from "@prisma/client";
 import { db } from "../../utils/db.server";
@@ -12,6 +12,12 @@ export const loader: LoaderFunction = async () => {
     take: 1,
     skip: randomRowNumber
   });
+
+  if (!randomNft) {
+    throw new Response("No random nft found", {
+      status: 404
+    });
+  }
   const data: LoaderData = { randomNft };
   return data;
 };
@@ -29,5 +35,28 @@ export default function NftsIndexRoute() {
             {data.randomNft.name} PermaLink
         </Link>
       </div>
+    );
+  }
+
+  export function ErrorBoundary() {
+    return (
+      <div className="error-container">
+        I did a whoopsies.
+      </div>
+    );
+  }
+
+  export function CatchBoundary() {
+    const caught = useCatch();
+  
+    if (caught.status === 404) {
+      return (
+        <div className="error-container">
+          There are no nfts to display.
+        </div>
+      );
+    }
+    throw new Error(
+      `Unexpected caught response with status: ${caught.status}`
     );
   }
